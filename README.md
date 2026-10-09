@@ -59,3 +59,9 @@ python3 evaluation/evaluate.py --gold data/processed/validation.jsonl --outputs 
 This creates `results/baseline-001-validation/per-example.jsonl` and `aggregate.json`, reporting structured-output validity, correctness accuracy/macro F1, first-error exact match/mean absolute distance, and taxonomy macro F1. Classification and localization quality are computed on valid outputs only; validity is reported separately so format failures are explicit.
 
 Dataset provenance and outstanding review concerns are in the [dataset card](docs/data-card-v0.1.md). Use [the baseline log template](docs/experiment-log-v0.1-baseline.md) when recording a run.
+
+## Run a prompt-only baseline in Google Colab
+
+Use [01_prompt_baselines_colab.ipynb](notebooks/01_prompt_baselines_colab.ipynb) as the central Colab experiment runner. It clones this repository, validates the selected split, loads a configurable open-weight model in 4-bit mode, writes outputs, and invokes the repository evaluator.
+
+Keep the repository scripts—not the notebook—as the source of truth for dataset preparation and scoring. Start with the validation split and the zero-shot prompt; do not inspect the test split until the model and prompt are frozen. Colab storage is ephemeral, so download or copy the ignored `runs/` and `results/` directories to Drive at the end of every run.
