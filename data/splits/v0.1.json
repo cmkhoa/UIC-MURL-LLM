@@ -1,0 +1,129 @@
+{
+  "algorithm": "deterministic seeded randomized greedy search",
+  "dataset_version": "v0.1-pilot",
+  "seed": 20261004,
+  "source": "data/raw/graded-exams.jsonl",
+  "source_sha256": "80ed4a372590baf975424e932aa4718b64ef6b7c0e54450a3e74e63b83686f4d",
+  "split_unit": "problem_family",
+  "split_version": "v0.1",
+  "splits": {
+    "test": {
+      "error_taxonomy_counts": {
+        "algebra": 4,
+        "antiderivative": 5,
+        "bounds": 5,
+        "integration_by_parts": 1,
+        "none": 21,
+        "other": 2,
+        "partial_fractions": 1,
+        "sign": 2,
+        "substitution": 4,
+        "trig_identity": 2
+      },
+      "families": [
+        "definite_substitution_change_of_bounds",
+        "ibp_cyclic_exponential_trig",
+        "improper_endpoint_discontinuity",
+        "partial_fractions_improper_rational",
+        "trig_secant_tangent_powers",
+        "trig_substitution_secant_form",
+        "u_substitution_trig_power"
+      ],
+      "record_count": 47,
+      "topic_counts": {
+        "definite_integrals": 9,
+        "improper_integrals": 8,
+        "integration_by_parts": 5,
+        "partial_fractions": 6,
+        "substitution": 6,
+        "trig_integrals": 7,
+        "trig_substitution": 6
+      }
+    },
+    "train": {
+      "error_taxonomy_counts": {
+        "algebra": 13,
+        "antiderivative": 25,
+        "bounds": 6,
+        "integration_by_parts": 3,
+        "none": 68,
+        "other": 7,
+        "partial_fractions": 2,
+        "sign": 15,
+        "substitution": 13,
+        "trig_identity": 3
+      },
+      "families": [
+        "definite_integration_by_parts",
+        "definite_polynomial_ftc",
+        "definite_trigonometric_ftc",
+        "ibp_inverse_function",
+        "ibp_logarithm",
+        "ibp_polynomial_times_exponential",
+        "ibp_polynomial_times_trig",
+        "improper_exponential_decay",
+        "mixed_algebraic_rewrite",
+        "mixed_definite_application",
+        "mixed_exponential_rational",
+        "mixed_method_selection",
+        "partial_fractions_distinct_linear",
+        "partial_fractions_irreducible_quadratic",
+        "trig_even_power_half_angle",
+        "trig_substitution_sine_form",
+        "u_substitution_exponential_inner",
+        "u_substitution_linear_inner_power",
+        "u_substitution_logarithmic_quotient",
+        "u_substitution_polynomial_composite"
+      ],
+      "record_count": 155,
+      "topic_counts": {
+        "definite_integrals": 25,
+        "improper_integrals": 8,
+        "integration_by_parts": 25,
+        "mixed_review": 38,
+        "partial_fractions": 15,
+        "substitution": 30,
+        "trig_integrals": 8,
+        "trig_substitution": 6
+      }
+    },
+    "validation": {
+      "error_taxonomy_counts": {
+        "algebra": 7,
+        "antiderivative": 9,
+        "bounds": 4,
+        "integration_by_parts": 1,
+        "none": 18,
+        "other": 2,
+        "partial_fractions": 1,
+        "sign": 4,
+        "substitution": 1,
+        "trig_identity": 1
+      },
+      "families": [
+        "ibp_repeated_application",
+        "improper_infinite_limit_power",
+        "mixed_completing_the_square",
+        "partial_fractions_repeated_linear",
+        "trig_odd_power_sine",
+        "trig_substitution_tangent_form",
+        "u_substitution_radical"
+      ],
+      "record_count": 48,
+      "topic_counts": {
+        "improper_integrals": 8,
+        "integration_by_parts": 6,
+        "mixed_review": 9,
+        "partial_fractions": 6,
+        "substitution": 6,
+        "trig_integrals": 7,
+        "trig_substitution": 6
+      }
+    }
+  },
+  "target_proportions": {
+    "test": 0.15,
+    "train": 0.7,
+    "validation": 0.15
+  }
+}

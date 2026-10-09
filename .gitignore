@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+
+# Local environments and editor settings
+.venv/
+venv/
+.env
+.DS_Store
+.idea/
+.vscode/
+
+# Local model artifacts and experiment output
+models/*
+!models/.gitkeep
+results/
+runs/
+
+# Raw, non-de-identified source material must never be committed.
+data/private/

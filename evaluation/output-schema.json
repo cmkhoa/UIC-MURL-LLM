@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MURL structured grading output v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["overall_correctness", "first_error_step", "error_taxonomy", "evidence", "grader_feedback", "confidence"],
+  "properties": {
+    "overall_correctness": {"enum": ["correct", "minor_error", "incorrect", "insufficient_work"]},
+    "first_error_step": {"type": ["integer", "null"], "minimum": 1},
+    "error_taxonomy": {"enum": ["none", "algebra", "sign", "antiderivative", "substitution", "integration_by_parts", "trig_identity", "partial_fractions", "bounds", "other"]},
+    "evidence": {"type": "string", "minLength": 1},
+    "grader_feedback": {"type": "string", "minLength": 1},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+  }
+}

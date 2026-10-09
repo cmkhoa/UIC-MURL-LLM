@@ -1,0 +1,40 @@
+project:
+  name: murl-integration-grading
+  phase: text_to_text
+  dataset_version: v0.1-pilot
+  seed: 20261004
+
+scope:
+  subject: Calc I-II single-variable integration
+  input_modality: text_transcript
+  deferred: [ocr, handwritten_images, dashboard]
+
+benchmark:
+  target_examples: 200
+  pilot_examples: 20
+  split_unit: problem_family
+  splits:
+    train: 0.70
+    validation: 0.15
+    test: 0.15
+
+evaluation:
+  required_metrics:
+    - correctness_accuracy
+    - correctness_macro_f1
+    - first_error_exact_match
+    - first_error_distance
+    - taxonomy_macro_f1
+    - structured_output_validity
+  decoding:
+    temperature: 0
+
+experiment_logging:
+  required_fields:
+    - dataset_version
+    - split_manifest
+    - model_revision
+    - quantization
+    - prompt_or_training_config
+    - seed
+    - raw_outputs_path
