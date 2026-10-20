@@ -21,9 +21,9 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Tomorrow: next step
 
-1. Convert the training split into supervised conversations with canonical JSON targets and validate the generated records.
-2. Create a versioned QLoRA/SFT smoke-run configuration that targets structured-output reliability and first-error localization.
-3. Train and evaluate one adaptation against its untouched base model on the validation split; leave the test split untouched.
+1. Inspect the QLoRA [smoke-run outputs](reports/v0.1-qlora-smoke.md) and establish a matching base-model control under the SFT system prompt.
+2. Create a longer, versioned QLoRA configuration using the training split only.
+3. Compare that adapter and its matching base control on validation; leave the held-out test split untouched.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 
