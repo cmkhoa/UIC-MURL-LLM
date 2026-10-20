@@ -6,7 +6,7 @@ The first phase is text-to-text only. OCR and handwritten-image input are deferr
 
 ## Project status
 
-The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The corpus is family-disjoint, validates cleanly, and has versioned zero-shot/few-shot prompts. The first validation baselines are complete: few-shot improves correctness and taxonomy classification, while zero-shot has higher exact first-error localization. The test split remains untouched. Read the [validation baseline report](reports/v0.1-validation-baselines.md) before running another experiment.
+The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The corpus is family-disjoint, validates cleanly, and has versioned zero-shot/few-shot prompts. Few-shot was selected on validation and evaluated once on the held-out test split; read the [held-out baseline report](reports/v0.1-heldout-test-baseline.md) before running another experiment.
 
 ## Repository layout
 
@@ -21,9 +21,9 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Tomorrow: next step
 
-1. Run the frozen [few-shot configuration](reports/v0.1-prompt-selection.md) once on `data/processed/test.jsonl`, preserving the result bundle and executed notebook.
-2. Report held-out metrics with output validity separated from classification and localization metrics.
-3. Convert the training split into supervised conversations and begin the first QLoRA/SFT smoke run.
+1. Convert the training split into supervised conversations with canonical JSON targets and validate the generated records.
+2. Create a versioned QLoRA/SFT smoke-run configuration that targets structured-output reliability and first-error localization.
+3. Train and evaluate one adaptation against its untouched base model on the validation split; leave the test split untouched.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 
