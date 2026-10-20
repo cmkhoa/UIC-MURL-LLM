@@ -12,7 +12,7 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 - `configs/`: versioned experiment and project configuration.
 - `data/`: raw source records, processed datasets, and split manifests.
-- `docs/`: stable task, annotation, and data documentation.
+- `docs/`: stable task, annotation, and data documentation; reusable templates live in `docs/templates/`.
 - `evaluation/`: schema validation and metrics.
 - `models/`: local model/adaptor metadata only; do not commit large weights.
 - `prompts/`: versioned baseline prompts.
@@ -58,7 +58,7 @@ python3 evaluation/evaluate.py --gold data/processed/validation.jsonl --outputs 
 
 This creates `results/baseline-001-validation/per-example.jsonl` and `aggregate.json`, reporting structured-output validity, correctness accuracy/macro F1, first-error exact match/mean absolute distance, and taxonomy macro F1. Classification and localization quality are computed on valid outputs only; validity is reported separately so format failures are explicit.
 
-Dataset provenance and outstanding review concerns are in the [dataset card](docs/data-card-v0.1.md). Use [the experiment log template](docs/experiment-log-template.md) for future runs and write completed findings in `reports/`.
+Dataset provenance and outstanding review concerns are in the [dataset card](docs/data-card-v0.1.md). Use [the experiment log template](docs/templates/experiment-log.md) for future runs and write completed findings in `reports/`.
 
 ## Run a prompt-only baseline in Google Colab
 
