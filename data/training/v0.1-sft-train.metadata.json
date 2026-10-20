@@ -1,0 +1,11 @@
+{
+  "dataset_version": "v0.1-pilot",
+  "examples": 155,
+  "format": "chat messages with canonical JSON assistant targets",
+  "output": "data/training/v0.1-sft-train.jsonl",
+  "output_sha256": "16365760e906c0fe48c3c1d1b15ecb281e2c374bdacdf1f2cae60996edfa9aac",
+  "source": "data/processed/train.jsonl",
+  "source_sha256": "b629bb7cbda6f47c43b10a449b00522e57363e0546d98784ba2d370e21e9f07e",
+  "split_policy": "training split only; validation and test are excluded",
+  "target_confidence": 0.9
+}

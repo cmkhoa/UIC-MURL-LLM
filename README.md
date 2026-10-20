@@ -59,6 +59,18 @@ This creates `results/baseline-001-validation/per-example.jsonl` and `aggregate.
 
 Dataset provenance and outstanding review concerns are in the [dataset card](docs/data-card-v0.1.md). Use [the experiment log template](docs/templates/experiment-log.md) for future runs and write completed findings in `reports/`.
 
+## Prepare supervised training data
+
+Create the SFT dataset from the frozen training split:
+
+```bash
+python3 scripts/make_sft_dataset.py
+```
+
+This produces [`data/training/v0.1-sft-train.jsonl`](data/training/v0.1-sft-train.jsonl): 155 chat conversations with canonical JSON assistant targets. The converter rejects validation and test inputs, validates every target against the output schema, and records source and output hashes in `data/training/v0.1-sft-train.metadata.json`.
+
+Use [`configs/qlora-v0.1-smoke.yaml`](configs/qlora-v0.1-smoke.yaml) for the first 10-step QLoRA smoke run. Its only purpose is to verify training and adapter loading; evaluate it on validation only before any longer training run.
+
 ## Run a prompt-only baseline in Google Colab
 
 Use [01_prompt_baselines_colab.ipynb](notebooks/01_prompt_baselines_colab.ipynb) as the central Colab experiment runner. It clones this repository, validates the selected split, loads a configurable open-weight model in 4-bit mode, writes outputs, and invokes the repository evaluator.

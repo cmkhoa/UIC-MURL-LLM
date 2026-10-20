@@ -6,6 +6,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from evaluation.evaluate import evaluate
+from evaluation.schema import validate_output
+from scripts.make_sft_dataset import TRAIN_SOURCE, build_sft_records
 from scripts.prepare_run import prepare_run
 from scripts.validate_benchmark import validate
 
@@ -55,6 +57,24 @@ class RunPreparationTests(unittest.TestCase):
         for limit in [0, -1, True, 1.5]:
             with self.subTest(limit=limit), self.assertRaises(ValueError):
                 prepare_run(ROOT, 'unused', 'validation', 'prompts/v0.1-zero-shot.md', limit)
+
+
+class SftDatasetTests(unittest.TestCase):
+    def test_builds_valid_targets_from_training_split_only(self):
+        records = build_sft_records(TRAIN_SOURCE)
+        source = [json.loads(line) for line in TRAIN_SOURCE.read_text(encoding='utf-8').splitlines() if line]
+        steps_by_id = {row['example_id']: len(row['student_solution']) for row in source}
+        self.assertEqual(len(source), len(records))
+        self.assertEqual('system', records[0]['messages'][0]['role'])
+        self.assertEqual('user', records[0]['messages'][1]['role'])
+        self.assertEqual('assistant', records[0]['messages'][2]['role'])
+        for record in records:
+            target = json.loads(record['messages'][2]['content'])
+            self.assertTrue(validate_output(target, steps_by_id[record['example_id']]).valid)
+
+    def test_rejects_non_training_source(self):
+        with self.assertRaises(ValueError):
+            build_sft_records(Path('data/processed/validation.jsonl'))
 
 
 class BenchmarkValidationTests(unittest.TestCase):
