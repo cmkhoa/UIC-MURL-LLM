@@ -20,6 +20,8 @@ class EvaluationTests(unittest.TestCase):
         self.assertTrue(per_example[0]["output_valid"])
         self.assertEqual(1.0, aggregate["output_validity_rate"])
         self.assertEqual(1.0, aggregate["correctness_accuracy_valid_only"])
+        self.assertEqual(1, aggregate["stratified"]["by_topic"]["substitution"]["examples"])
+        self.assertEqual(1.0, aggregate["stratified"]["by_difficulty"]["easy"]["output_validity_rate"])
 
     def test_missing_output_is_invalid(self):
         _, aggregate = evaluate(GOLD, [])

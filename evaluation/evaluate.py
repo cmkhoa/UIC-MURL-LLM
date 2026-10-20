@@ -45,6 +45,53 @@ def macro_f1(gold: list[str], pred: list[str], labels: list[str]) -> float:
     return sum(scores) / len(scores) if scores else 0.0
 
 
+def metric_summary(gold_rows: list[dict[str, Any]], valid_predictions: list[tuple[dict[str, Any], dict[str, Any]]]) -> dict[str, Any]:
+    """Return metrics for a complete split or one metadata stratum."""
+    n = len(gold_rows)
+    correctness_gold = [g["overall_correctness"] for g, _ in valid_predictions]
+    correctness_pred = [p["overall_correctness"] for _, p in valid_predictions]
+    taxonomy_gold = [g["error_taxonomy"] for g, _ in valid_predictions]
+    taxonomy_pred = [p["error_taxonomy"] for _, p in valid_predictions]
+    localized = [(g, p) for g, p in valid_predictions if isinstance(g["first_error_step"], int)]
+    exact = sum(g["first_error_step"] == p["first_error_step"] for g, p in localized)
+    distances = [
+        abs(g["first_error_step"] - p["first_error_step"])
+        for g, p in localized
+        if isinstance(p["first_error_step"], int)
+    ]
+    return {
+        "examples": n,
+        "valid_outputs": len(valid_predictions),
+        "output_validity_rate": len(valid_predictions) / n if n else 0.0,
+        "correctness_accuracy_valid_only": (
+            sum(g == p for g, p in zip(correctness_gold, correctness_pred)) / len(valid_predictions)
+            if valid_predictions else 0.0
+        ),
+        "correctness_macro_f1_valid_only": macro_f1(correctness_gold, correctness_pred, sorted(CORRECTNESS)),
+        "taxonomy_macro_f1_valid_only": macro_f1(taxonomy_gold, taxonomy_pred, sorted(TAXONOMY)),
+        "first_error_eligible_examples": len(localized),
+        "first_error_exact_match_valid_only": exact / len(localized) if localized else 0.0,
+        "first_error_mean_absolute_distance_valid_only": sum(distances) / len(distances) if distances else None,
+    }
+
+
+def stratified_metrics(gold_rows: list[dict[str, Any]], valid_predictions: list[tuple[dict[str, Any], dict[str, Any]]]) -> dict[str, dict[str, dict[str, Any]]]:
+    """Summarize results by benchmark metadata without re-reading model outputs."""
+    result = {}
+    for key, name in (
+        ("topic", "by_topic"),
+        ("difficulty", "by_difficulty"),
+        ("error_taxonomy", "by_gold_error_taxonomy"),
+    ):
+        groups = {}
+        for value in sorted({row[key] for row in gold_rows}):
+            rows = [row for row in gold_rows if row[key] == value]
+            predictions = [(gold, prediction) for gold, prediction in valid_predictions if gold[key] == value]
+            groups[value] = metric_summary(rows, predictions)
+        result[name] = groups
+    return result
+
+
 def evaluate(gold_rows: list[dict[str, Any]], output_rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     outputs: dict[str, Any] = {}
     duplicate_output_ids: set[str] = set()
@@ -82,21 +129,9 @@ def evaluate(gold_rows: list[dict[str, Any]], output_rows: list[dict[str, Any]])
             })
             valid_predictions.append((gold, parsed))
         per_example.append(record)
-    n = len(gold_rows)
-    correctness_gold = [g["overall_correctness"] for g, _ in valid_predictions]
-    correctness_pred = [p["overall_correctness"] for _, p in valid_predictions]
-    taxonomy_gold = [g["error_taxonomy"] for g, _ in valid_predictions]
-    taxonomy_pred = [p["error_taxonomy"] for _, p in valid_predictions]
-    localized = [(g, p) for g, p in valid_predictions if isinstance(g["first_error_step"], int)]
-    exact = sum(g["first_error_step"] == p["first_error_step"] for g, p in localized)
-    distances = [abs(g["first_error_step"] - p["first_error_step"]) for g, p in localized if isinstance(p["first_error_step"], int)]
     aggregate = {
-        "examples": n, "valid_outputs": len(valid_predictions), "output_validity_rate": len(valid_predictions) / n if n else 0.0,
-        "correctness_accuracy_valid_only": (sum(g == p for g, p in zip(correctness_gold, correctness_pred)) / len(valid_predictions) if valid_predictions else 0.0),
-        "correctness_macro_f1_valid_only": macro_f1(correctness_gold, correctness_pred, sorted(CORRECTNESS)),
-        "taxonomy_macro_f1_valid_only": macro_f1(taxonomy_gold, taxonomy_pred, sorted(TAXONOMY)),
-        "first_error_eligible_examples": len(localized), "first_error_exact_match_valid_only": exact / len(localized) if localized else 0.0,
-        "first_error_mean_absolute_distance_valid_only": sum(distances) / len(distances) if distances else None,
+        **metric_summary(gold_rows, valid_predictions),
+        "stratified": stratified_metrics(gold_rows, valid_predictions),
         "missing_output_ids": [g["example_id"] for g in gold_rows if g["example_id"] not in outputs],
         "unexpected_output_ids": unexpected_ids, "duplicate_output_ids": sorted(duplicate_output_ids),
         "metric_note": "Classification and localization metrics are computed on schema-valid outputs only; validity is reported separately.",

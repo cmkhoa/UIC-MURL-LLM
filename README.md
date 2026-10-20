@@ -21,10 +21,9 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Tomorrow: next step
 
-1. Read the [validation baseline report](reports/v0.1-validation-baselines.md) and inspect the saved few-shot outputs.
-2. Add stratified validation summaries by topic, difficulty, and taxonomy; use them with a short qualitative review to choose the frozen prompt.
-3. Record that prompt-selection decision in a new report. Only then run the chosen configuration once on `data/processed/test.jsonl`.
-4. Convert the training split into supervised conversations and begin the first QLoRA/SFT smoke run.
+1. Run the frozen [few-shot configuration](reports/v0.1-prompt-selection.md) once on `data/processed/test.jsonl`, preserving the result bundle and executed notebook.
+2. Report held-out metrics with output validity separated from classification and localization metrics.
+3. Convert the training split into supervised conversations and begin the first QLoRA/SFT smoke run.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 
