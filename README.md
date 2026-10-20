@@ -71,6 +71,14 @@ This produces [`data/training/v0.1-sft-train.jsonl`](data/training/v0.1-sft-trai
 
 Use [`configs/qlora-v0.1-smoke.yaml`](configs/qlora-v0.1-smoke.yaml) for the first 10-step QLoRA smoke run. Its only purpose is to verify training and adapter loading; evaluate it on validation only before any longer training run.
 
+On a CUDA-enabled Colab runtime, install `transformers`, `accelerate`, `bitsandbytes`, `peft`, and `pyyaml`, then run:
+
+```bash
+python3 scripts/run_qlora_smoke.py --config configs/qlora-v0.1-smoke.yaml
+```
+
+The run verifies the frozen training-data hash before training, saves the adapter and training metadata below `models/`, then reloads the adapter from disk before reporting success.
+
 ## Run a prompt-only baseline in Google Colab
 
 Use [01_prompt_baselines_colab.ipynb](notebooks/01_prompt_baselines_colab.ipynb) as the central Colab experiment runner. It clones this repository, validates the selected split, loads a configurable open-weight model in 4-bit mode, writes outputs, and invokes the repository evaluator.

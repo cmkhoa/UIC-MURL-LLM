@@ -8,7 +8,7 @@ base_model:
   revision: aa8e72537993ba99e69dfaafa59ed015b17504d1
   load_in_4bit: true
   quantization: nf4
-  compute_dtype: bfloat16
+  compute_dtype: float16
 
 data:
   train_file: data/training/v0.1-sft-train.jsonl
