@@ -17,6 +17,7 @@ models/*
 !models/.gitkeep
 results/
 runs/
+notebooks/*_output.ipynb
 
 # Raw, non-de-identified source material must never be committed.
 data/private/

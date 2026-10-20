@@ -45,25 +45,31 @@ def validate(path):
         except json.JSONDecodeError as exc:
             problems.append(f"{where}: invalid JSON ({exc})")
             continue
+        if not isinstance(r, dict):
+            problems.append(f"{where}: expected a JSON object")
+            continue
         missing = [k for k in REQUIRED if k not in r]
         if missing:
             problems.append(f"{where}: missing fields {missing}")
             continue
         rid = r["example_id"]
         where = f"{where} [{rid}]"
+        if not isinstance(rid, str) or not rid.strip():
+            problems.append(f"{where}: example_id must be a non-empty string")
+            continue
         if rid in seen:
             problems.append(f"{where}: duplicate example_id")
         seen.add(rid)
 
-        if r["overall_correctness"] not in CORRECTNESS:
+        if not isinstance(r["overall_correctness"], str) or r["overall_correctness"] not in CORRECTNESS:
             problems.append(f"{where}: overall_correctness {r['overall_correctness']!r}")
-        if r["error_taxonomy"] not in TAXONOMY:
+        if not isinstance(r["error_taxonomy"], str) or r["error_taxonomy"] not in TAXONOMY:
             problems.append(f"{where}: error_taxonomy {r['error_taxonomy']!r}")
-        if r["difficulty"] not in DIFFICULTY:
+        if not isinstance(r["difficulty"], str) or r["difficulty"] not in DIFFICULTY:
             problems.append(f"{where}: difficulty {r['difficulty']!r}")
-        if r["source"] not in SOURCE:
+        if not isinstance(r["source"], str) or r["source"] not in SOURCE:
             problems.append(f"{where}: source {r['source']!r}")
-        if r["review_status"] not in REVIEW_STATUS:
+        if not isinstance(r["review_status"], str) or r["review_status"] not in REVIEW_STATUS:
             problems.append(f"{where}: review_status {r['review_status']!r}")
 
         steps = r["student_solution"]
@@ -72,8 +78,9 @@ def validate(path):
             continue
         if not isinstance(r["reference_solution"], list) or len(r["reference_solution"]) < 2:
             problems.append(f"{where}: reference_solution must have at least two steps")
+        reference_steps = r["reference_solution"] if isinstance(r["reference_solution"], list) else []
         if any(not isinstance(s, str) or not s.strip()
-               for s in steps + r["reference_solution"]):
+               for s in steps + reference_steps):
             problems.append(f"{where}: blank or non-string solution step")
         for field in ("problem", "gold_feedback", "problem_family", "topic"):
             if not isinstance(r[field], str) or not r[field].strip():
