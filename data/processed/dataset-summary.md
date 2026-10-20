@@ -6,7 +6,7 @@ Records: **250**, one JSON object per line. Problem families: **34**. Distinct p
 
 Every record is authored for this benchmark. No graded-exam transcripts were supplied for
 this build, so `source` is `authored` everywhere and `grader_mark` is `null` everywhere
-(grader comments are never invented; see `data/processed/validation-report.md`).
+(grader comments are never invented; see `data/processed/v0.1-dataset-validation.md`).
 
 ## Record schema
 

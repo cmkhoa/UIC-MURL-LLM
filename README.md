@@ -38,7 +38,7 @@ python3 scripts/validate_benchmark.py data/raw/graded-exams.jsonl data/processed
 python3 -m unittest discover -s evaluation/tests -v
 ```
 
-The split manifest is [data/splits/v0.1.json](data/splits/v0.1.json). It preserves all taxonomy labels in train/validation/test. Family constraints yield 155/48/47 records rather than the nominal 70/15/15 record proportions; see the [review report](data/processed/v0.1-review-report.md).
+The split manifest is [data/splits/v0.1.json](data/splits/v0.1.json). It preserves all taxonomy labels in train/validation/test. Family constraints yield 155/48/47 records rather than the nominal 70/15/15 record proportions; see the [dataset review](data/processed/v0.1-dataset-review.md).
 
 Use [v0.1-zero-shot.md](prompts/v0.1-zero-shot.md) or [v0.1-few-shot.md](prompts/v0.1-few-shot.md). The few-shot demonstrations are drawn exclusively from `data/processed/train.jsonl`.
 

@@ -31,5 +31,5 @@
 ## Limitations and ethical use
 
 - Expected differences from real student work: authored examples have cleaner notation and intentionally represented error patterns; they are not a sample of a course population.
-- Known label ambiguity or coverage gaps: `minor_error` versus `incorrect`, insufficient-work taxonomy, abandoned invalid work, and small taxonomy cells require careful review. See `data/processed/v0.1-review-report.md`.
+- Known label ambiguity or coverage gaps: `minor_error` versus `incorrect`, insufficient-work taxonomy, abandoned invalid work, and small taxonomy cells require careful review. See `data/processed/v0.1-dataset-review.md`.
 - Appropriate use: grader assistance and research only, with an instructor or other qualified human reviewing all decisions. It must not autonomously assign course grades.
