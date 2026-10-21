@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from evaluation.evaluate import evaluate
 from evaluation.schema import validate_output
+from scripts.evaluate_qlora_adapter import load_system_prompt
 from scripts.make_sft_dataset import TRAIN_SOURCE, build_sft_records
 from scripts.prepare_run import prepare_run
 from scripts.validate_benchmark import validate
@@ -60,6 +61,11 @@ class RunPreparationTests(unittest.TestCase):
 
 
 class SftDatasetTests(unittest.TestCase):
+    def test_evaluator_reads_the_configured_sft_prompt(self):
+        prompt = load_system_prompt(ROOT, 'prompts/v0.2-sft-system.md')
+        self.assertIn('`insufficient_work`', prompt)
+        self.assertIn('`substitution`', prompt)
+
     def test_builds_valid_targets_from_training_split_only(self):
         records = build_sft_records(TRAIN_SOURCE)
         source = [json.loads(line) for line in TRAIN_SOURCE.read_text(encoding='utf-8').splitlines() if line]

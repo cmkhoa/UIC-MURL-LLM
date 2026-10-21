@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.make_sft_dataset import SYSTEM_PROMPT, user_message
+from scripts.make_sft_dataset import user_message
 from scripts.prepare_run import prepare_run
 
 
@@ -23,6 +23,13 @@ def load_config(path: Path):
 
     with path.open(encoding="utf-8") as handle:
         return yaml.safe_load(handle)
+
+
+def load_system_prompt(root: Path, relative_path: str) -> str:
+    prompt = (root / relative_path).read_text(encoding="utf-8").strip()
+    if not prompt:
+        raise ValueError(f"SFT system prompt is empty: {relative_path}")
+    return prompt
 
 
 def main() -> int:
@@ -35,6 +42,7 @@ def main() -> int:
     inference = config["adapter_inference"]
     if inference["split"] != "validation":
         raise ValueError("Adapter evaluation is restricted to the validation split.")
+    system_prompt = load_system_prompt(ROOT, inference["system_prompt_file"])
 
     import torch
     from peft import PeftModel
@@ -71,7 +79,7 @@ def main() -> int:
     outputs_path = run_dir / "outputs.jsonl"
     with outputs_path.open("w", encoding="utf-8") as handle:
         for index, example in enumerate(examples, 1):
-            messages = [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_message(example)}]
+            messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message(example)}]
             rendered = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
             inputs = tokenizer(rendered, return_tensors="pt").to(model.device)
             with torch.inference_mode():

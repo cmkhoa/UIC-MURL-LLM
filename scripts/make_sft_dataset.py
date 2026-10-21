@@ -13,18 +13,13 @@ ROOT = Path(__file__).resolve().parents[1]
 TRAIN_SOURCE = ROOT / "data/processed/train.jsonl"
 DEFAULT_OUTPUT = ROOT / "data/training/v0.1-sft-train.jsonl"
 DEFAULT_METADATA = ROOT / "data/training/v0.1-sft-train.metadata.json"
+DEFAULT_SYSTEM_PROMPT = ROOT / "prompts/v0.1-sft-system.md"
 TARGET_CONFIDENCE = 0.9
 
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from evaluation.schema import validate_output
-
-
-SYSTEM_PROMPT = """You grade a text transcript of a worked single-variable integration solution.
-Compare the student work with the reference solution. Identify the earliest mathematically invalid student step, not a downstream consequence. Accept valid alternative methods.
-
-Return only one JSON object with exactly these keys: overall_correctness, first_error_step, error_taxonomy, evidence, grader_feedback, and confidence. Use one allowed correctness label and one allowed taxonomy label."""
 
 
 def sha256(path: Path) -> str:
@@ -82,9 +77,12 @@ def user_message(row: dict[str, Any]) -> str:
     )
 
 
-def build_sft_records(source: Path) -> list[dict[str, Any]]:
+def build_sft_records(source: Path, system_prompt: Path = DEFAULT_SYSTEM_PROMPT) -> list[dict[str, Any]]:
     if source.resolve() != TRAIN_SOURCE.resolve():
         raise ValueError(f"SFT generation accepts only the frozen training split: {TRAIN_SOURCE}")
+    prompt = system_prompt.read_text(encoding="utf-8").strip()
+    if not prompt:
+        raise ValueError(f"SFT system prompt is empty: {system_prompt}")
     records = []
     for row in read_jsonl(source):
         target = target_for(row)
@@ -94,7 +92,7 @@ def build_sft_records(source: Path) -> list[dict[str, Any]]:
         records.append({
             "example_id": row["example_id"],
             "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": user_message(row)},
                 {"role": "assistant", "content": json.dumps(target, ensure_ascii=False, separators=(",", ":"))},
             ],
@@ -115,9 +113,10 @@ def main() -> int:
     parser.add_argument("--source", type=Path, default=TRAIN_SOURCE)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
+    parser.add_argument("--system-prompt", type=Path, default=DEFAULT_SYSTEM_PROMPT)
     args = parser.parse_args()
 
-    records = build_sft_records(args.source)
+    records = build_sft_records(args.source, args.system_prompt)
     write_jsonl(records, args.output)
     metadata = {
         "dataset_version": "v0.1-pilot",
@@ -125,6 +124,8 @@ def main() -> int:
         "source_sha256": sha256(args.source),
         "output": display_path(args.output),
         "output_sha256": sha256(args.output),
+        "system_prompt": display_path(args.system_prompt),
+        "system_prompt_sha256": sha256(args.system_prompt),
         "examples": len(records),
         "format": "chat messages with canonical JSON assistant targets",
         "target_confidence": TARGET_CONFIDENCE,
