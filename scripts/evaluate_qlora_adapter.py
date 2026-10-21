@@ -28,7 +28,8 @@ def load_config(path: Path):
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("configs/qlora-v0.1-smoke.yaml"))
-    parser.add_argument("--adapter", type=Path, required=True)
+    parser.add_argument("--adapter", type=Path, help="Saved adapter directory; omit for the untouched base-model control.")
+    parser.add_argument("--run-id", help="Override the configured validation run ID.")
     args = parser.parse_args()
     config = load_config(args.config)
     inference = config["adapter_inference"]
@@ -44,10 +45,11 @@ def main() -> int:
     base = config["base_model"]
     compute_dtype = torch.bfloat16 if base["compute_dtype"] == "bfloat16" else torch.float16
     set_seed(config["run"]["seed"])
+    run_id = args.run_id or inference["run_id"]
     examples, _, run_dir = prepare_run(
-        ROOT, inference["run_id"], inference["split"], inference["system_prompt_file"], None,
+        ROOT, run_id, inference["split"], inference["system_prompt_file"], None,
         metadata={
-            "model_id": base["id"], "model_revision": base["revision"], "adapter": str(args.adapter),
+            "model_id": base["id"], "model_revision": base["revision"], "adapter": str(args.adapter) if args.adapter else None,
             "seed": config["run"]["seed"], "gpu": torch.cuda.get_device_name(0),
             "packages": {name: version(name) for name in ["torch", "transformers", "accelerate", "bitsandbytes", "peft"]},
             "quantization": {"load_in_4bit": True, "quant_type": base["quantization"], "compute_dtype": str(compute_dtype)},
@@ -62,7 +64,8 @@ def main() -> int:
         base["id"], revision=base["revision"], token=False, device_map="auto",
         quantization_config=quantization, torch_dtype=compute_dtype,
     )
-    model = PeftModel.from_pretrained(model, args.adapter)
+    if args.adapter:
+        model = PeftModel.from_pretrained(model, args.adapter)
     model.eval()
 
     outputs_path = run_dir / "outputs.jsonl"
@@ -82,10 +85,10 @@ def main() -> int:
             if index % 10 == 0 or index == len(examples):
                 print(f"Completed {index}/{len(examples)}")
 
-    results_dir = ROOT / "results" / inference["run_id"]
+    results_dir = ROOT / "results" / run_id
     subprocess.run([
         sys.executable, "evaluation/evaluate.py", "--gold", str(run_dir / "gold.jsonl"),
-        "--outputs", str(outputs_path), "--run-id", inference["run_id"], "--results-dir", str(ROOT / "results"),
+        "--outputs", str(outputs_path), "--run-id", run_id, "--results-dir", str(ROOT / "results"),
     ], check=True, cwd=ROOT)
     shutil.copy2(run_dir / "metadata.json", results_dir / "metadata.json")
     shutil.copytree(results_dir, run_dir / "results")
