@@ -21,7 +21,7 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Tomorrow: next step
 
-Run the label-guidance experiment in [`configs/qlora-v0.2-label-guidance.yaml`](configs/qlora-v0.2-label-guidance.yaml), then compare its adapter and matching base control on validation. The rationale and fixed comparison conditions are in the [validation error review](reports/v0.1-qlora-full-error-review.md). The held-out test split remains frozen.
+Review the taxonomy regressions in the [v0.2 label-guidance result](reports/v0.2-label-guidance-validation.md), then prepare one taxonomy-focused v0.3 intervention while retaining v0.2's correctness guidance. Evaluate it on validation before selecting a version for the held-out test. The held-out test split remains frozen.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 
