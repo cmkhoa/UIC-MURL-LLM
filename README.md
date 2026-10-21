@@ -21,7 +21,7 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Tomorrow: next step
 
-Review the taxonomy regressions in the [v0.2 label-guidance result](reports/v0.2-label-guidance-validation.md), then prepare one taxonomy-focused v0.3 intervention while retaining v0.2's correctness guidance. Evaluate it on validation before selecting a version for the held-out test. The held-out test split remains frozen.
+Run [`configs/qlora-v0.3-taxonomy-guidance.yaml`](configs/qlora-v0.3-taxonomy-guidance.yaml), which adds taxonomy decision rules to v0.2's correctness guidance. Compare it with v0.1 and v0.2 on validation before selecting a version for the held-out test. The held-out test split remains frozen.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 
