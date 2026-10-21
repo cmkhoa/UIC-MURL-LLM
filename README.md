@@ -21,7 +21,7 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Tomorrow: next step
 
-Run [`configs/qlora-v0.3-taxonomy-guidance.yaml`](configs/qlora-v0.3-taxonomy-guidance.yaml), which adds taxonomy decision rules to v0.2's correctness guidance. Compare it with v0.1 and v0.2 on validation before selecting a version for the held-out test. The held-out test split remains frozen.
+Create one training-only taxonomy-balanced SFT sampling experiment that retains v0.2's correctness guidance, then compare it with v0.1–v0.3 on validation. After selecting a balanced candidate, begin a controlled cross-model comparison. The held-out test split remains frozen.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 
