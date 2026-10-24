@@ -21,7 +21,7 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Tomorrow: next step
 
-Create one training-only taxonomy-balanced SFT sampling experiment that retains v0.2's correctness guidance, then compare it with v0.1–v0.3 on validation. After selecting a balanced candidate, begin a controlled cross-model comparison. The held-out test split remains frozen.
+The [v0.4 taxonomy-balanced experiment](reports/v0.4-taxonomy-balanced-validation.md) improved taxonomy F1 to 32.7% and first-error exact match to 71.4%, but correctness fell to 58.7% and validity to 46/48. Do not promote it as the final model. Next, test moderated train-only balancing that preserves more `none` exposure, retaining v0.2 guidance and the fixed training budget. Then freeze the strongest balanced recipe and follow the [prepared cross-family comparison protocol](reports/v0.4-cross-family-comparison-plan.md). The held-out test split remains frozen.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 

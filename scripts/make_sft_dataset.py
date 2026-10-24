@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter, defaultdict
 import hashlib
 import json
+import random
 import sys
 from pathlib import Path
 from typing import Any
@@ -108,15 +110,50 @@ def write_jsonl(records: list[dict[str, Any]], output: Path) -> None:
     )
 
 
+def balance_taxonomy(records: list[dict[str, Any]], seed: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Retain all records and equalize labels using seeded shuffled cycles."""
+    groups = defaultdict(list)
+    for record in records:
+        label = json.loads(record["messages"][-1]["content"])["error_taxonomy"]
+        groups[label].append(record)
+    if not groups:
+        raise ValueError("Cannot balance an empty training dataset")
+    rng = random.Random(seed)
+    target = max(map(len, groups.values()))
+    balanced = []
+    for label in sorted(groups):
+        selected = []
+        while len(selected) < target:
+            cycle = list(groups[label])
+            rng.shuffle(cycle)
+            selected.extend(cycle[:target - len(selected)])
+        balanced.extend(selected)
+    rng.shuffle(balanced)
+    return balanced, {
+        "policy": "equal taxonomy counts at largest training-label count; shuffled cycles with replacement between cycles; final seeded shuffle",
+        "seed": seed,
+        "target_per_label": target,
+        "original_counts": {label: len(rows) for label, rows in sorted(groups.items())},
+        "sampled_counts": {label: target for label in sorted(groups)},
+        "source_id_multiplicities": dict(sorted(Counter(row["example_id"] for row in balanced).items())),
+        "unique_source_examples": len(records),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=TRAIN_SOURCE)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--system-prompt", type=Path, default=DEFAULT_SYSTEM_PROMPT)
+    parser.add_argument("--balance-taxonomy", action="store_true")
+    parser.add_argument("--seed", type=int, default=20261004)
     args = parser.parse_args()
 
     records = build_sft_records(args.source, args.system_prompt)
+    sampling = None
+    if args.balance_taxonomy:
+        records, sampling = balance_taxonomy(records, args.seed)
     write_jsonl(records, args.output)
     metadata = {
         "dataset_version": "v0.1-pilot",
@@ -130,7 +167,10 @@ def main() -> int:
         "format": "chat messages with canonical JSON assistant targets",
         "target_confidence": TARGET_CONFIDENCE,
         "split_policy": "training split only; validation and test are excluded",
+        "generator_sha256": sha256(Path(__file__)),
     }
+    if sampling is not None:
+        metadata["sampling"] = sampling
     args.metadata.parent.mkdir(parents=True, exist_ok=True)
     args.metadata.write_text(json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(metadata, ensure_ascii=False, indent=2, sort_keys=True))
