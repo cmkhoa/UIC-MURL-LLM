@@ -29,3 +29,15 @@ class SamplingTests(unittest.TestCase):
     def test_empty(self):
         with self.assertRaises(ValueError):
             balance_taxonomy([], 42)
+
+    def test_target_retains_all_sources_without_downsampling(self):
+        records = [
+            {"example_id": str(i), "messages": [{"content": json.dumps({"error_taxonomy": label})}]}
+            for i, label in enumerate(["a", "a", "a", "b"])
+        ]
+        balanced, metadata = balance_taxonomy(records, 42, 4)
+        self.assertEqual(metadata["sampled_counts"], {"a": 4, "b": 4})
+        self.assertEqual(set(row["example_id"] for row in balanced), {"0", "1", "2", "3"})
+        balanced, metadata = balance_taxonomy(records, 42, 2)
+        self.assertEqual(metadata["sampled_counts"], {"a": 3, "b": 2})
+        self.assertEqual(set(row["example_id"] for row in balanced), {"0", "1", "2", "3"})

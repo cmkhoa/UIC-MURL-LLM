@@ -110,8 +110,10 @@ def write_jsonl(records: list[dict[str, Any]], output: Path) -> None:
     )
 
 
-def balance_taxonomy(records: list[dict[str, Any]], seed: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Retain all records and equalize labels using seeded shuffled cycles."""
+def balance_taxonomy(
+    records: list[dict[str, Any]], seed: int, target_per_label: int | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Retain all records and oversample labels to a training-only cap."""
     groups = defaultdict(list)
     for record in records:
         label = json.loads(record["messages"][-1]["content"])["error_taxonomy"]
@@ -119,22 +121,27 @@ def balance_taxonomy(records: list[dict[str, Any]], seed: int) -> tuple[list[dic
     if not groups:
         raise ValueError("Cannot balance an empty training dataset")
     rng = random.Random(seed)
-    target = max(map(len, groups.values()))
+    largest_group = max(map(len, groups.values()))
+    target = largest_group if target_per_label is None else target_per_label
     balanced = []
+    sampled_counts = {}
     for label in sorted(groups):
+        label_target = max(target, len(groups[label]))
         selected = []
-        while len(selected) < target:
+        while len(selected) < label_target:
             cycle = list(groups[label])
             rng.shuffle(cycle)
-            selected.extend(cycle[:target - len(selected)])
+            selected.extend(cycle[:label_target - len(selected)])
         balanced.extend(selected)
+        sampled_counts[label] = label_target
     rng.shuffle(balanced)
     return balanced, {
-        "policy": "equal taxonomy counts at largest training-label count; shuffled cycles with replacement between cycles; final seeded shuffle",
+        "policy": "taxonomy oversampling to a training-only minimum target without downsampling; shuffled cycles with replacement between cycles; final seeded shuffle",
         "seed": seed,
         "target_per_label": target,
+        "largest_source_label_count": largest_group,
         "original_counts": {label: len(rows) for label, rows in sorted(groups.items())},
-        "sampled_counts": {label: target for label in sorted(groups)},
+        "sampled_counts": sampled_counts,
         "source_id_multiplicities": dict(sorted(Counter(row["example_id"] for row in balanced).items())),
         "unique_source_examples": len(records),
     }
@@ -147,13 +154,17 @@ def main() -> int:
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--system-prompt", type=Path, default=DEFAULT_SYSTEM_PROMPT)
     parser.add_argument("--balance-taxonomy", action="store_true")
+    parser.add_argument("--taxonomy-target", type=int,
+                        help="Oversample each taxonomy label to this count; requires --balance-taxonomy.")
     parser.add_argument("--seed", type=int, default=20261004)
     args = parser.parse_args()
 
     records = build_sft_records(args.source, args.system_prompt)
     sampling = None
+    if args.taxonomy_target is not None and not args.balance_taxonomy:
+        parser.error("--taxonomy-target requires --balance-taxonomy")
     if args.balance_taxonomy:
-        records, sampling = balance_taxonomy(records, args.seed)
+        records, sampling = balance_taxonomy(records, args.seed, args.taxonomy_target)
     write_jsonl(records, args.output)
     metadata = {
         "dataset_version": "v0.1-pilot",

@@ -21,7 +21,7 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Tomorrow: next step
 
-The [v0.4 taxonomy-balanced experiment](reports/v0.4-taxonomy-balanced-validation.md) improved taxonomy F1 to 32.7% and first-error exact match to 71.4%, but correctness fell to 58.7% and validity to 46/48. Do not promote it as the final model. Next, test moderated train-only balancing that preserves more `none` exposure, retaining v0.2 guidance and the fixed training budget. Then freeze the strongest balanced recipe and follow the [prepared cross-family comparison protocol](reports/v0.4-cross-family-comparison-plan.md). The held-out test split remains frozen.
+The [v0.5 moderated taxonomy-balance experiment](reports/v0.5-moderated-taxonomy-balance-validation.md) is the strongest balanced candidate: it retained 97.9% validity, reached 63.8% correctness accuracy and 32.0% taxonomy macro F1, using only training-split resampling. Next, use this frozen recipe in the [prepared cross-family comparison protocol](reports/v0.4-cross-family-comparison-plan.md). Select one final model from validation results, then evaluate it exactly once on the held-out test split. The held-out test split remains frozen until then.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 
