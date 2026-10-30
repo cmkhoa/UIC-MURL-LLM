@@ -21,7 +21,7 @@ The v0.1-pilot text benchmark and prompt-only evaluation baseline are ready. The
 
 ## Next step
 
-The [v0.5 moderated taxonomy-balance recipe](reports/v0.5-moderated-taxonomy-balance-validation.md) is frozen: 97.9% validity, 63.8% correctness accuracy, and 32.0% taxonomy macro F1, using only training-split resampling. The [v0.3–v0.5 validation error review](reports/v0.5-validation-error-review.md) identifies taxonomy discrimination as the main bottleneck, especially algebra, sign, and antiderivative errors. Next, run the precommitted [v0.6 hierarchical multi-task SFT experiment](reports/v0.6-hierarchical-multitask-plan.md); retain v0.5 for the [cross-family comparison](reports/v0.6-cross-family-execution-plan.md) if it does not improve the balanced utility. The held-out test split remains frozen until a final model is selected.
+The [v0.5 moderated taxonomy-balance recipe](reports/v0.5-moderated-taxonomy-balance-validation.md) remains frozen for selection: 97.9% validity, 63.8% correctness accuracy, and 32.0% taxonomy macro F1, using only training-split resampling. The completed [v0.6 hierarchical multi-task experiment](reports/v0.6-hierarchical-multitask-validation.md) improved correctness and first-error localization but missed its 47/48 validity gate and reduced taxonomy F1, so it does not replace v0.5. Next, run the controlled [cross-family comparison](reports/v0.6-cross-family-execution-plan.md) with the frozen v0.5 recipe. The held-out test split remains frozen until a final model is selected.
 
 See [the project plan](PLANNING.MD), [the task specification](docs/task-spec.md), and [the annotation guide](docs/annotation-guide.md).
 
