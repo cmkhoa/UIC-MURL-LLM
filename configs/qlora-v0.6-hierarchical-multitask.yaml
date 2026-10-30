@@ -1,7 +1,7 @@
 run:
   id: qwen2.5-3b-murl-v0.6-hierarchical-multitask
   seed: 20261004
-  purpose: Staged field-weighted SFT: correctness first, then taxonomy and first-error localization.
+  purpose: "Staged field-weighted SFT: correctness first, then taxonomy and first-error localization."
 
 base_model:
   id: Qwen/Qwen2.5-3B-Instruct
