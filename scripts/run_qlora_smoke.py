@@ -7,6 +7,7 @@ import gc
 import hashlib
 import json
 import random
+import re
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,7 @@ def main() -> int:
     data = config["data"]
     qlora = config["qlora"]
     training = config["training"]
+    multitask = training.get("hierarchical_multitask")
     train_file = Path(data["train_file"])
     output_dir = Path(training["output_dir"])
     adapter_dir = output_dir / "adapter"
@@ -95,30 +97,81 @@ def main() -> int:
             messages = self.rows[index][data["message_field"]]
             prompt = tokenizer.apply_chat_template(messages[:2], tokenize=False, add_generation_prompt=True)
             full = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
-            input_ids = tokenizer(
-                full, add_special_tokens=False, truncation=True, max_length=training["max_sequence_length"],
-            )["input_ids"]
+            encoded = tokenizer(full, add_special_tokens=False, truncation=True,
+                                max_length=training["max_sequence_length"], return_offsets_mapping=bool(multitask))
+            input_ids = encoded["input_ids"]
             prompt_ids = tokenizer(
                 prompt, add_special_tokens=False, truncation=True, max_length=training["max_sequence_length"],
             )["input_ids"]
             prompt_length = min(len(prompt_ids), len(input_ids))
             if prompt_length >= len(input_ids):
                 raise ValueError(f"{self.rows[index]['example_id']}: assistant target was truncated")
-            return {"input_ids": input_ids, "labels": [-100] * prompt_length + input_ids[prompt_length:]}
+            result = {"input_ids": input_ids, "labels": [-100] * prompt_length + input_ids[prompt_length:]}
+            if multitask:
+                target = messages[-1]["content"]
+                start = full.rfind(target)
+                if start < 0:
+                    raise ValueError(f"{self.rows[index]['example_id']}: cannot locate assistant target")
+                spans = {}
+                for field in ("overall_correctness", "first_error_step", "error_taxonomy"):
+                    match = re.search(rf'"{field}":[^,}}]+', target)
+                    if not match:
+                        raise ValueError(f"{self.rows[index]['example_id']}: missing target field {field}")
+                    spans[field] = (start + match.start(), start + match.end())
+                def weights(phase: str) -> list[float]:
+                    field_weights = multitask[phase]["field_weights"]
+                    result_weights = [0.0] * len(input_ids)
+                    for token_index, (left, right) in enumerate(encoded["offset_mapping"]):
+                        if token_index < prompt_length or left == right:
+                            continue
+                        weight = 1.0
+                        for field, (field_left, field_right) in spans.items():
+                            if left < field_right and right > field_left:
+                                weight = float(field_weights[field])
+                        result_weights[token_index] = weight
+                    return result_weights
+                result["decision_weights"] = weights("decision_phase")
+                result["diagnosis_weights"] = weights("diagnosis_phase")
+            return result
 
     def collate(features: list[dict[str, list[int]]]) -> dict[str, Any]:
         max_length = max(len(feature["input_ids"]) for feature in features)
         input_ids, attention_mask, labels = [], [], []
+        decision_weights, diagnosis_weights = [], []
         for feature in features:
             padding = max_length - len(feature["input_ids"])
             input_ids.append(feature["input_ids"] + [tokenizer.pad_token_id] * padding)
             attention_mask.append([1] * len(feature["input_ids"]) + [0] * padding)
             labels.append(feature["labels"] + [-100] * padding)
-        return {
+            if multitask:
+                decision_weights.append(feature["decision_weights"] + [0.0] * padding)
+                diagnosis_weights.append(feature["diagnosis_weights"] + [0.0] * padding)
+        batch = {
             "input_ids": torch.tensor(input_ids, dtype=torch.long),
             "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
             "labels": torch.tensor(labels, dtype=torch.long),
         }
+        if multitask:
+            batch["decision_weights"] = torch.tensor(decision_weights, dtype=torch.float)
+            batch["diagnosis_weights"] = torch.tensor(diagnosis_weights, dtype=torch.float)
+        return batch
+
+    class HierarchicalTrainer(Trainer):
+        def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+            decision_weights = inputs.pop("decision_weights")
+            diagnosis_weights = inputs.pop("diagnosis_weights")
+            labels = inputs["labels"]
+            outputs = model(**inputs)
+            logits = outputs.logits[:, :-1, :].contiguous()
+            targets = labels[:, 1:].contiguous()
+            weights = (decision_weights if self.state.global_step < multitask["decision_phase"]["steps"]
+                       else diagnosis_weights)[:, 1:].contiguous()
+            losses = torch.nn.functional.cross_entropy(
+                logits.view(-1, logits.size(-1)), targets.view(-1), reduction="none", ignore_index=-100,
+            ).view_as(targets)
+            active = (targets != -100).to(weights.dtype) * weights
+            loss = (losses * active).sum() / active.sum().clamp_min(1.0)
+            return (loss, outputs) if return_outputs else loss
 
     training_args = TrainingArguments(
         output_dir=str(output_dir), max_steps=training["max_steps"], learning_rate=training["learning_rate"],
@@ -128,7 +181,8 @@ def main() -> int:
         report_to="none", fp16=compute_dtype == torch.float16, bf16=compute_dtype == torch.bfloat16,
         remove_unused_columns=False, seed=run["seed"], data_seed=run["seed"],
     )
-    trainer = Trainer(model=model, args=training_args, train_dataset=ChatDataset(records), data_collator=collate)
+    trainer_class = HierarchicalTrainer if multitask else Trainer
+    trainer = trainer_class(model=model, args=training_args, train_dataset=ChatDataset(records), data_collator=collate)
     result = trainer.train()
     adapter_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(adapter_dir)
