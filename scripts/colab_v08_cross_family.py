@@ -64,22 +64,12 @@ if v07:
     assert v05["qlora"] == v07["qlora"]
 
 base = v05["base_model"]
-snapshot = Path(snapshot_download(base["id"], revision=base["revision"], token=False))
 local_cache = Path(f"/content/murl-hf-v08-{family}")
 local_snapshot = local_cache / ("models--" + base["id"].replace("/", "--")) / "snapshots" / base["revision"]
-local_snapshot.mkdir(parents=True, exist_ok=True)
-for file in snapshot.iterdir():
-    source = file
-    for _ in range(8):
-        if source.is_symlink():
-            source = source.parent / os.readlink(source)
-        elif source.is_file() and source.stat().st_size < 512 and source.read_bytes().startswith(b"../../blobs/"):
-            source = source.parent / source.read_text().strip()
-        else:
-            break
-    else:
-        raise ValueError(f"Unresolved cache link: {file}")
-    shutil.copyfile(source, local_snapshot / file.name)
+snapshot_download(
+    base["id"], revision=base["revision"], token=False,
+    local_dir=str(local_snapshot),
+)
 from safetensors import safe_open
 for file in local_snapshot.glob("*.safetensors"):
     with safe_open(file, framework="pt", device="cpu") as weights:
