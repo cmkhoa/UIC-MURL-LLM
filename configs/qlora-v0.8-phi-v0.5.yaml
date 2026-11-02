@@ -1,0 +1,56 @@
+run:
+  id: phi3.5-mini-murl-v0.8-v0.5
+  seed: 20261004
+  purpose: "v0.8 cross-family v0.5 arm: ordinary SFT on frozen moderated taxonomy-balanced data."
+
+base_model:
+  id: microsoft/Phi-3.5-mini-instruct
+  revision: 2fe192450127e6a83f7441aef6e3ca586c338b77
+  load_in_4bit: true
+  quantization: nf4
+  compute_dtype: float16
+  trust_remote_code: false
+
+architecture:
+  model_type: phi3
+  license_access: "MIT; public Hugging Face repository."
+  projection_mapping: "Fused qkv_proj attention, o_proj output, fused gate_up_proj MLP, and down_proj MLP output."
+
+data:
+  train_file: data/training/v0.5-sft-train.jsonl
+  train_file_sha256: ea78f215770cf29880532e19126a9c27a28308bb1403c52152c7c995c1139826
+  train_examples: 293
+  validation_file: data/processed/validation.jsonl
+  validation_file_sha256: 247a41683c61d80acbb4974c845a3f3f03fac2218f62f6da26ab3a091cb406ee
+  test_policy: Do not read or use data/processed/test.jsonl during training or tuning.
+  message_field: messages
+
+qlora:
+  rank: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules: [qkv_proj, o_proj, gate_up_proj, down_proj]
+
+training:
+  max_steps: 60
+  learning_rate: 0.0002
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8
+  max_sequence_length: 2048
+  warmup_steps: 3
+  logging_steps: 5
+  save_steps: 60
+  output_dir: models/phi3.5-mini-murl-v0.8-v0.5
+
+evaluation:
+  after_training: Compare adapter and untouched base with the v0.2 prompt on validation only.
+  required_metrics: [structured_output_validity, correctness_accuracy, correctness_macro_f1, first_error_exact_match, first_error_distance, taxonomy_macro_f1]
+
+adapter_inference:
+  run_id: phi3.5-mini-murl-v0.8-v0.5-validation
+  split: validation
+  system_prompt_file: prompts/v0.2-sft-system.md
+  max_new_tokens: 256
+
+artifacts:
+  save: [adapter, tokenizer, trainer_state, training_log, resolved_config, dataset_metadata, validation_outputs, evaluation_results]

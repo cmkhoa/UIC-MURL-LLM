@@ -64,13 +64,17 @@ def main() -> int:
             "decoding": {"do_sample": False, "max_new_tokens": inference["max_new_tokens"]},
         },
     )
-    tokenizer = AutoTokenizer.from_pretrained(base["id"], revision=base["revision"], token=False)
+    tokenizer = AutoTokenizer.from_pretrained(
+        base["id"], revision=base["revision"], token=False,
+        trust_remote_code=base.get("trust_remote_code", False),
+    )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     quantization = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type=base["quantization"], bnb_4bit_compute_dtype=compute_dtype)
     model = AutoModelForCausalLM.from_pretrained(
         base["id"], revision=base["revision"], token=False, device_map="auto",
         quantization_config=quantization, torch_dtype=compute_dtype,
+        trust_remote_code=base.get("trust_remote_code", False),
     )
     if args.adapter:
         model = PeftModel.from_pretrained(model, args.adapter)

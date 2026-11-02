@@ -114,13 +114,17 @@ def main() -> int:
         bnb_4bit_quant_type=base["quantization"],
         bnb_4bit_compute_dtype=compute_dtype,
     )
-    tokenizer = AutoTokenizer.from_pretrained(base["id"], revision=base["revision"], token=False)
+    tokenizer = AutoTokenizer.from_pretrained(
+        base["id"], revision=base["revision"], token=False,
+        trust_remote_code=base.get("trust_remote_code", False),
+    )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     def build_model():
         loaded = AutoModelForCausalLM.from_pretrained(
             base["id"], revision=base["revision"], token=False, device_map="auto",
             quantization_config=quantization, torch_dtype=compute_dtype,
+            trust_remote_code=base.get("trust_remote_code", False),
         )
         loaded.config.use_cache = False
         loaded = prepare_model_for_kbit_training(loaded)
@@ -130,6 +134,8 @@ def main() -> int:
         ))
 
     model = build_model()
+    total_parameters = sum(parameter.numel() for parameter in model.parameters())
+    trainable_parameters = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
 
     class ChatDataset(Dataset):
         def __init__(self, rows: list[dict[str, Any]]):
@@ -283,6 +289,7 @@ def main() -> int:
     verify_base = AutoModelForCausalLM.from_pretrained(
         base["id"], revision=base["revision"], token=False, device_map="auto",
         quantization_config=quantization, torch_dtype=compute_dtype,
+        trust_remote_code=base.get("trust_remote_code", False),
     )
     verified_adapter = PeftModel.from_pretrained(verify_base, adapter_dir)
     metadata = {
@@ -290,6 +297,8 @@ def main() -> int:
         "base_model": base["id"], "base_revision": base["revision"], "seed": run["seed"],
         "gpu": torch.cuda.get_device_name(0), "torch": torch.__version__, "transformers": transformers.__version__,
         "adapter_load_verified": isinstance(verified_adapter, PeftModel), "training_metrics": metrics,
+        "total_parameters": total_parameters, "trainable_parameters": trainable_parameters,
+        "architecture": config.get("architecture", {}),
     }
     if stage_checkpoint:
         metadata["stage_1_checkpoint"] = str(stage_checkpoint)
