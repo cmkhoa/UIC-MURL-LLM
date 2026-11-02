@@ -80,7 +80,7 @@ def main() -> int:
     from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
     from torch.utils.data import Dataset
     from transformers import (
-        AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer,
+        AutoModelForCausalLM, AutoModelForImageTextToText, AutoTokenizer, BitsAndBytesConfig, Trainer,
         TrainerCallback, TrainingArguments, set_seed,
     )
 
@@ -120,8 +120,16 @@ def main() -> int:
     )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    model_loader = base.get("model_loader", "causal_lm")
+    model_class = {
+        "causal_lm": AutoModelForCausalLM,
+        "image_text_to_text": AutoModelForImageTextToText,
+    }.get(model_loader)
+    if model_class is None:
+        raise ValueError(f"Unsupported base_model.model_loader: {model_loader}")
+
     def build_model():
-        loaded = AutoModelForCausalLM.from_pretrained(
+        loaded = model_class.from_pretrained(
             base["id"], revision=base["revision"], token=False, device_map="auto",
             quantization_config=quantization, torch_dtype=compute_dtype,
             trust_remote_code=base.get("trust_remote_code", False),
@@ -286,7 +294,7 @@ def main() -> int:
     del trainer, model
     gc.collect()
     torch.cuda.empty_cache()
-    verify_base = AutoModelForCausalLM.from_pretrained(
+    verify_base = model_class.from_pretrained(
         base["id"], revision=base["revision"], token=False, device_map="auto",
         quantization_config=quantization, torch_dtype=compute_dtype,
         trust_remote_code=base.get("trust_remote_code", False),

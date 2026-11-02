@@ -46,7 +46,7 @@ def main() -> int:
 
     import torch
     from peft import PeftModel
-    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, set_seed
+    from transformers import AutoModelForCausalLM, AutoModelForImageTextToText, AutoTokenizer, BitsAndBytesConfig, set_seed
 
     if not torch.cuda.is_available():
         raise RuntimeError("Adapter evaluation requires a CUDA GPU.")
@@ -71,7 +71,14 @@ def main() -> int:
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     quantization = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type=base["quantization"], bnb_4bit_compute_dtype=compute_dtype)
-    model = AutoModelForCausalLM.from_pretrained(
+    model_loader = base.get("model_loader", "causal_lm")
+    model_class = {
+        "causal_lm": AutoModelForCausalLM,
+        "image_text_to_text": AutoModelForImageTextToText,
+    }.get(model_loader)
+    if model_class is None:
+        raise ValueError(f"Unsupported base_model.model_loader: {model_loader}")
+    model = model_class.from_pretrained(
         base["id"], revision=base["revision"], token=False, device_map="auto",
         quantization_config=quantization, torch_dtype=compute_dtype,
         trust_remote_code=base.get("trust_remote_code", False),
