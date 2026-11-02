@@ -91,7 +91,10 @@ def main() -> int:
     with outputs_path.open("w", encoding="utf-8") as handle:
         for index, example in enumerate(examples, 1):
             messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message(example)}]
-            rendered = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            rendered = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True,
+                **base.get("chat_template_kwargs", {}),
+            )
             inputs = tokenizer(rendered, return_tensors="pt").to(model.device)
             with torch.inference_mode():
                 generated = model.generate(

@@ -154,8 +154,9 @@ def main() -> int:
 
         def __getitem__(self, index: int) -> dict[str, list[int]]:
             messages = self.rows[index][data["message_field"]]
-            prompt = tokenizer.apply_chat_template(messages[:2], tokenize=False, add_generation_prompt=True)
-            full = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+            template_kwargs = base.get("chat_template_kwargs", {})
+            prompt = tokenizer.apply_chat_template(messages[:2], tokenize=False, add_generation_prompt=True, **template_kwargs)
+            full = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, **template_kwargs)
             encoded = tokenizer(full, add_special_tokens=False, truncation=True,
                                 max_length=training["max_sequence_length"],
                                 return_offsets_mapping=bool(weighted_schedule))
