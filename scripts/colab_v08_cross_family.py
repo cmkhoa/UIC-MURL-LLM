@@ -1,7 +1,8 @@
 """Run one v0.8 paired cross-family experiment in a mounted Colab session.
 
-Set MURL_V08_FAMILY, MURL_V08_V05_CONFIG, and MURL_V08_V07_CONFIG before
-execution. The script validates one untouched base and both independent arms.
+Set MURL_V08_FAMILY and MURL_V08_V05_CONFIG before execution. Optionally set
+MURL_V08_V07_CONFIG to add the independent v0.7 arm. The script always
+validates one untouched base before the requested adapter arm(s).
 """
 import hashlib
 import os
@@ -26,18 +27,19 @@ def file_sha256(path):
 
 
 family = os.environ["MURL_V08_FAMILY"]
+run_label = os.environ.get("MURL_V08_RUN_LABEL", family)
 v05_config = os.environ["MURL_V08_V05_CONFIG"]
-v07_config = os.environ["MURL_V08_V07_CONFIG"]
+v07_config = os.environ.get("MURL_V08_V07_CONFIG")
 drive = Path("/content/drive/MyDrive/MURL")
 assert drive.parent.is_dir(), "Mount Drive before running"
 os.environ["HF_HOME"] = str(drive / "huggingface-cache")
 archive = Path("/content/murl-v08-source.zip")
-root = Path(f"/content/UIC-MURL-v08-{family}")
+root = Path(f"/content/UIC-MURL-v08-{run_label}")
 assert not root.exists(), "Use a fresh source directory"
 with zipfile.ZipFile(archive) as source:
     assert source.testzip() is None
     source.extractall(root)
-backup = drive / "runs/v0.8-cross-family" / family
+backup = drive / "runs/v0.8-cross-family" / run_label
 backup.mkdir(parents=True, exist_ok=True)
 source_backup = backup / archive.name
 shutil.copy2(archive, source_backup)
@@ -53,12 +55,13 @@ from huggingface_hub import snapshot_download
 import yaml
 
 v05 = yaml.safe_load(Path(v05_config).read_text())
-v07 = yaml.safe_load(Path(v07_config).read_text())
-for key in ("id", "revision", "quantization", "compute_dtype", "trust_remote_code"):
-    assert v05["base_model"].get(key) == v07["base_model"].get(key), key
-for key in ("train_file", "train_file_sha256", "validation_file", "validation_file_sha256"):
-    assert v05["data"][key] == v07["data"][key], key
-assert v05["qlora"] == v07["qlora"]
+v07 = yaml.safe_load(Path(v07_config).read_text()) if v07_config else None
+if v07:
+    for key in ("id", "revision", "quantization", "compute_dtype", "trust_remote_code"):
+        assert v05["base_model"].get(key) == v07["base_model"].get(key), key
+    for key in ("train_file", "train_file_sha256", "validation_file", "validation_file_sha256"):
+        assert v05["data"][key] == v07["data"][key], key
+    assert v05["qlora"] == v07["qlora"]
 
 base = v05["base_model"]
 snapshot = Path(snapshot_download(base["id"], revision=base["revision"], token=False))
@@ -129,5 +132,6 @@ def run_arm(label, config, settings):
 
 
 run_arm("v05", v05_config, v05)
-run_arm("v07", v07_config, v07)
-print("EXPERIMENT COMPLETE: all five archives verified and saved to Drive.", flush=True)
+if v07:
+    run_arm("v07", v07_config, v07)
+print("EXPERIMENT COMPLETE: requested archives verified and saved to Drive.", flush=True)
